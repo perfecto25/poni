@@ -1,0 +1,13 @@
+name: poni
+version: 0.1.0
+
+authors:
+  - perfecto25
+
+targets:
+  syncx:
+    main: src/poni.cr
+
+crystal: 1.2.1
+
+license: MIT
