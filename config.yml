@@ -1,0 +1,17 @@
+---
+
+# remote syncs
+sync:
+  /tmp/file:
+    remote_host: qbtm-uat
+    remote_path: /tmp/
+    remote_user: mreider
+    rsync_opts: -azP
+    interval: 10 
+  
+  /opt/file2:
+    remote_host: qbtm-uat
+    remote_path: /opt
+    remote_user: mreider
+    rsync_opts: -rc
+    interval: 60

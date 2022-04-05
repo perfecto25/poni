@@ -5,8 +5,14 @@ authors:
   - perfecto25
 
 targets:
-  syncx:
+  poni:
     main: src/poni.cr
+
+dependencies:  
+  logger:
+    github: crystal-lang/logger.cr
+  totem:
+    github: icyleaf/totem
 
 crystal: 1.2.1
 
