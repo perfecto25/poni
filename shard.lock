@@ -4,3 +4,11 @@ shards:
     git: https://github.com/crystal-lang/logger.cr.git
     version: 0.1.0
 
+  popcorn:
+    git: https://github.com/icyleaf/popcorn.git
+    version: 0.3.0
+
+  totem:
+    git: https://github.com/icyleaf/totem.git
+    version: 0.7.0
+

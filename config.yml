@@ -1,17 +1,22 @@
 ---
-
 # remote syncs
 sync:
-  /tmp/file:
-    remote_host: qbtm-uat
+  /home/joe/test:
+    remote_host: localhost
     remote_path: /tmp/
-    remote_user: mreider
-    rsync_opts: -azP
-    interval: 10 
-  
-  /opt/file2:
-    remote_host: qbtm-uat
+    remote_user: joe
+    rsync_opts: azvPj
+
+  /opt/dir1:
+    remote_host: nycweb1
     remote_path: /opt
-    remote_user: mreider
-    rsync_opts: -rc
-    interval: 60
+    remote_user: jsmith
+    priv_key: /home/jsmith/.ssh/id_rsa
+    rsync_opts: azBP
+    interval: 15
+
+  /var/log/syslog:
+    remote_host: web9
+    remote_path: /mnt/backup/logs/host123
+    remote_user: root
+    priv_key: /root/.ssh/id_rsa

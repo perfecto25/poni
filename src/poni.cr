@@ -1,10 +1,8 @@
 require "logger"
 require "option_parser"
+require "totem"
 require "./watcher"
 require "./worker"
-require "./config"
-
-# https://github.com/Dlacreme/spy/blob/master/src/watcher.cr
 
 module Poni
   VERSION = "0.1.0"
@@ -13,55 +11,68 @@ module Poni
   cfile = "/etc/poni/config.yml"
 
   OptionParser.parse do |parser|
-    parser.banner = "poni"
+    parser.banner = "Poni - inotify rsync daemon"
     parser.on("-c CONFIG", "--config=CONFIG", "Specifies the name to salute") { |config| cfile=config }
-  
-    
     parser.on "-h", "--help", "Show help" do
       puts parser
       exit
     end
+    parser.on "-v", "--version", "Show version" do
+      puts VERSION
+      exit
+    end
+    parser.invalid_option do |flag|
+      STDERR.puts "ERROR: #{flag} is not a valid option."
+      STDERR.puts parser
+      exit(1)
+    end
   end
 
-  puts "#{cfile}"
   abort "config file is missing", 1 if !File.file? cfile
-
-
-
-  #conf = Config.load_from_yml_file("./spy.yml")
-
-  dst_host = "qbtm-uat"
-  src_path = "/tmp/file"
-  dst_path = "/tmp/file"
-
-  # begin
-  #   YAML.parse(File.read(cfile)).each do |data|
-  #     puts data
-  #   end
-  # rescue exception
-  #   puts "unable to parse #{cfile}"
-  #   exit
-  # end
-
-
-  yaml = File.open(cfile) { |file| YAML.parse(file) }
-  puts yaml.class                         # => YAML::Any
-  hash = yaml.as_h
-  hash["sync"].each do |h|
-    puts h
+  
+  begin
+    totem = Totem.from_file cfile
+  rescue exception
+    log.error("unable to open config file")
+    abort "unable to open config file", 1
   end
 
-#  conf = Config.load_from_yml_file("./config.yml")
+  channel = Channel(String).new
 
+  begin
+    totem.get("sync").as_h.keys.each do |key|
 
-#  log.info("#{conf["sync"]}")
+      log.error("#{key} source file or directory is missing") if !File.exists? key
+      abort "#{key} source file or directory is missing", 1 if !File.exists? key
 
-#  puts typeof(conf)
+      totem.set_default("sync.#{key}.interval", 3)
+      totem.set_default("sync.#{key}.rsync_opts", "azP")
+      totem.set_default("sync.#{key}.port", 22)
 
-  
-  channel = Channel(Int32).new  
- 
-  Worker.spawn_worker(src_path, dst_host, dst_path)
+      interval = totem.get("sync.#{key}.interval").as_i
+      rsync_opts = totem.get("sync.#{key}.rsync_opts").as_s
+      port = totem.get("sync.#{key}.port").as_i
+
+      puts port
+      puts interval
+      puts rsync_opts 
+      begin
+        remote_path = totem.get("sync.#{key}.remote_path").as_s
+        remote_host = totem.get("sync.#{key}.remote_host").as_s
+        remote_user = totem.get("sync.#{key}.remote_user").as_s
+        priv_key = totem.get("sync.#{key}.priv_key").as_s
+      rescue exception
+        log.error("unable to get config values: #{exception}")
+        abort "unable to get config values: #{exception}", 1
+      end
+      
+      Worker.spawn_worker(key, remote_user, remote_host, remote_path, rsync_opts, priv_key, port, interval)
+
+    end
+  rescue exception
+    log.error(exception)
+    abort "error running sync: #{exception}", 1
+  end 
 
   while 1 == 1
     if channel.closed?
@@ -69,10 +80,7 @@ module Poni
     else
       puts channel.receive
     end 
-	end
+  end
 
-
-  #sleep 60.seconds
- # watcher.close
 
 end
