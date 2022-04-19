@@ -53,9 +53,6 @@ module Poni
       rsync_opts = totem.get("sync.#{key}.rsync_opts").as_s
       port = totem.get("sync.#{key}.port").as_i
 
-      puts port
-      puts interval
-      puts rsync_opts 
       begin
         remote_path = totem.get("sync.#{key}.remote_path").as_s
         remote_host = totem.get("sync.#{key}.remote_host").as_s

@@ -46,22 +46,17 @@ start the service
 
 Configure Poni config file by editing /etc/poni/config.yml
 
-place each Sync configuration under "Sync" section
+place each Sync configuration under "Sync" section, here are some examples:
 
     sync:
-        /home/joe/test:
-            remote_host: localhost
-            remote_path: /tmp/
-            remote_user: joe
-            rsync_opts: azvPj
-
         /opt/dir1:
-            remote_host: nycweb1
-            remote_path: /opt
-            remote_user: jsmith
-            priv_key: /home/jsmith/.ssh/id_rsa
-            rsync_opts: azBP
-            interval: 15
+            remote_host: nycweb1                ## target host
+            remote_path: /opt                   ## target path on remote host 
+            remote_user: jsmith                 ## user which will initiate rsync
+            priv_key: /home/jsmith/.ssh/id_rsa  ## path to user's private SSH key
+            port: 1122                          ## custom SSH port (default: 22)
+            rsync_opts: azBP                    ## additional Rsync flags (default: azP)
+            interval: 15                        ## sleep time in seconds before rsyncing on a change (default: 3)
 
         /var/log/syslog:
             remote_host: web9
