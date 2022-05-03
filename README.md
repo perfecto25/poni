@@ -51,12 +51,13 @@ place each Sync configuration under "Sync" section, here are some examples:
     sync:
         /opt/dir1:
             remote_host: nycweb1                ## target host
-            remote_path: /opt                   ## target path on remote host 
+            remote_path: /opt                   ## target path on remote host
             remote_user: jsmith                 ## user which will initiate rsync
             priv_key: /home/jsmith/.ssh/id_rsa  ## path to user's private SSH key
-            port: 1122                          ## custom SSH port (default: 22)
+            port: 1122                          ## custom SSH port, default = 22
             rsync_opts: azBP                    ## additional Rsync flags (default: azP)
-            interval: 15                        ## sleep time in seconds before rsyncing on a change (default: 3)
+            interval: 15                        ## sleep time in seconds before rsyncing on a change, default = 3
+            recurse: "true"                     ## watch directories recursively for changes, default = "false"
 
         /var/log/syslog:
             remote_host: web9
@@ -72,7 +73,7 @@ Once config file is ready, start Poni service,
 
     sudo systemctl restart poni
 
-To view Poni logs, tail the service 
+To view Poni logs, tail the service
 
     sudo journalctl -f -u poni
 
@@ -81,7 +82,6 @@ Poni will spawn independent sync workers for each Sync configuration and use INo
 To decrease the amount of syncs between your Poni server and partner/slave hosts, use "interval" value in seconds. Specifying an Interval makes Poni sleep (interval) seconds before syncing the changes. By default, Poni will sync every 3 seconds if a change is detected.
 
 To add additional rsync options, use rsync_opts parameter. Default rsync flags are "azP"
-
 
 ## Development
 

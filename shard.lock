@@ -1,5 +1,9 @@
 version: 2.0
 shards:
+  inotify:
+    git: https://github.com/petoem/inotify.cr.git
+    version: 1.0.3
+
   logger:
     git: https://github.com/crystal-lang/logger.cr.git
     version: 0.1.0

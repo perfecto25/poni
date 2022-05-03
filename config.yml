@@ -5,6 +5,7 @@ sync:
     remote_host: localhost
     remote_path: /tmp/
     remote_user: joe
+    priv_key: /home/joe/.ssh/id_ed25519
     rsync_opts: azvPj
 
   /opt/dir1:
@@ -14,9 +15,11 @@ sync:
     priv_key: /home/jsmith/.ssh/id_rsa
     rsync_opts: azBP
     interval: 15
+    recurse: "true"
 
   /var/log/syslog:
     remote_host: web9
     remote_path: /mnt/backup/logs/host123
     remote_user: root
     priv_key: /root/.ssh/id_rsa
+    recurse: "true"

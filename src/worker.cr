@@ -1,15 +1,15 @@
 require "logger"
-require "./watcher"
+#require "./watcher"
+require "inotify"
 
 module Poni::Worker
   extend self
   
-  def spawn_worker(src_path, remote_user, remote_host, remote_path, rsync_opts, priv_key, port, interval)
+  def spawn_worker(src_path, remote_user, remote_host, remote_path, rsync_opts, priv_key, port, interval, recurse)
     log = Logger.new(STDOUT, level: Logger::DEBUG)  
     spawn do
       begin
-        Watcher.watch(src_path) do
-
+        Inotify.watch src_path, recurse do |event| 
           log.info("#{src_path} modified, syncing to #{remote_host}:#{remote_path} after #{interval} seconds")
           sleep interval
 
@@ -28,8 +28,8 @@ module Poni::Worker
             log.error("error syncing #{src_path} to #{remote_host}:#{remote_path}: #{stderr}")
           end 
           Fiber.yield        
-        end
-        
+        end # event
+
       rescue exception
         log.error(exception)
         next
@@ -38,5 +38,4 @@ module Poni::Worker
     end # spawn
   end
 end # module
-
 

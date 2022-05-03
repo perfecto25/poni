@@ -9,10 +9,13 @@ targets:
     main: src/poni.cr
 
 dependencies:  
+  inotify:
+    github: petoem/inotify.cr
   logger:
     github: crystal-lang/logger.cr
   totem:
     github: icyleaf/totem
+  
 
 crystal: 1.2.1
 
