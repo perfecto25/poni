@@ -1,0 +1,20 @@
+---
+# remote syncs
+sync:
+  /home/mreider/dir1:
+    remote_host: localhost
+    remote_path: /tmp/
+    remote_user: mreider
+    priv_key: /home/mreider/.ssh/id_rsa
+    rsync_opts: azPv
+    recurse: true
+    interval: 15
+
+  /home/mreider/dir2:
+    remote_host: qbtm-uat
+    remote_path: /tmp
+    remote_user: mreider
+    priv_key: /home/mreider/.ssh/id_rsa
+    recurse: false
+    interval: 30
+    

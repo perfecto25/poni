@@ -1,5 +1,5 @@
 name: poni
-version: 0.1.0
+version: 0.1.1
 
 authors:
   - perfecto25
@@ -15,8 +15,9 @@ dependencies:
     github: crystal-lang/logger.cr
   totem:
     github: icyleaf/totem
+  schedule:
+    github: hugoabonizio/schedule.cr
   
-
 crystal: 1.2.1
 
 license: MIT

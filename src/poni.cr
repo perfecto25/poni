@@ -1,18 +1,17 @@
 require "logger"
 require "option_parser"
 require "totem"
-#require "./watcher"
-require "./worker"
 require "inotify"
+require "./watcher"
+
 module Poni
   VERSION = "0.1.1"
-
   log = Logger.new(STDOUT, level: Logger::INFO)
   cfgfile = "/etc/poni/config.yml"
 
   OptionParser.parse do |parser|
     parser.banner = "Poni - inotify rsync daemon"
-    parser.on("-c CONFIG", "--config=CONFIG", "Specifies the name to salute") { |config| cfgfile=config }
+    parser.on("-c CONFIG", "--config=CONFIG", "path to config file") { |config| cfgfile=config }
     parser.on "-h", "--help", "Show help" do
       puts parser
       exit
@@ -37,11 +36,11 @@ module Poni
     abort "unable to open config file", 1
   end
 
-  channel = Channel(String).new
-
+  channel = Channel(Bool).new
+  recursive = false 
+  
   begin
     totem.get("sync").as_h.keys.each do |key|
-
       log.error("#{key} source file or directory is missing") if !File.exists? key
       abort "#{key} source file or directory is missing", 1 if !File.exists? key
 
@@ -58,22 +57,21 @@ module Poni
         interval = totem.get("sync.#{key}.interval").as_i
         rsync_opts = totem.get("sync.#{key}.rsync_opts").as_s
         port = totem.get("sync.#{key}.port").as_i
-        recurse = totem.get("sync.#{key}.recurse").as_s.downcase
+        recurse = totem.get("sync.#{key}.recurse")
   
       rescue exception
         log.error("unable to get config values: #{exception}")
         abort "unable to get config values: #{exception}", 1
       end
-
-      if recurse == "true"
-        recurse = true
-      else 
-        recurse = false
+      
+      if recurse == "true" || recurse == true
+          recursive = true 
+      elsif recurse == "false" || recurse == false
+          recursive = false
       end
-
-      Worker.spawn_worker(key, remote_user, remote_host, remote_path, rsync_opts, priv_key, port, interval, recurse)
-
-    end
+      
+      Watcher.spawn_watcher(key, remote_user, remote_host, remote_path, rsync_opts, priv_key, port, interval, recursive)
+    end ## key
   rescue exception
     log.error(exception)
     abort "error running sync: #{exception}", 1
@@ -88,4 +86,4 @@ module Poni
   end
 
 
-end
+end ## module

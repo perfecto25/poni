@@ -57,7 +57,7 @@ place each Sync configuration under "Sync" section, here are some examples:
             port: 1122                          ## custom SSH port, default = 22
             rsync_opts: azBP                    ## additional Rsync flags (default: azP)
             interval: 15                        ## sleep time in seconds before rsyncing on a change, default = 3
-            recurse: "true"                     ## watch directories recursively for changes, default = "false"
+            recurse: true                       ## watch directories recursively for changes, default = false
 
         /var/log/syslog:
             remote_host: web9
