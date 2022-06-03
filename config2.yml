@@ -1,4 +1,7 @@
 ---
+
+log: /var/log/poni.log
+
 # remote syncs
 sync:
   /home/mreider/dir1:

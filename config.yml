@@ -1,4 +1,7 @@
 ---
+# logging config
+log: stdout # default is stdout, or provide path to log file
+
 # remote syncs
 sync:
   /home/joe/test:

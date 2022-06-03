@@ -73,9 +73,13 @@ Once config file is ready, start Poni service,
 
     sudo systemctl restart poni
 
-To view Poni logs, tail the service
+To view Poni logs, tail the service (if using the default stanard out)
 
     sudo journalctl -f -u poni
+
+or provide a specific log file location in config.yaml
+
+    log: /var/log/poni.log
 
 Poni will spawn independent sync workers for each Sync configuration and use INotify bindings to detect any changes to the configured files or folders. Once a change is detected, Poni will sync the updated file or folder to the remote_host, using the remote_user and priv_key values (only SSH key pairs are allowed for rsyncing)
 

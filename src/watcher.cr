@@ -2,11 +2,11 @@ require "logger"
 require "inotify"
 require "schedule"
 
+
 module Poni::Watcher
   extend self
   
-  def spawn_watcher(src_path, remote_user, remote_host, remote_path, rsync_opts, priv_key, port, interval, recurse)
-    log = Logger.new(STDOUT, level: Logger::DEBUG) 
+  def spawn_watcher(src_path, remote_user, remote_host, remote_path, rsync_opts, priv_key, port, interval, recurse, l
     channel = Channel(String).new
     log.info("watching #{src_path}")
     
