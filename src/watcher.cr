@@ -36,6 +36,7 @@ module Poni::Watcher
             if remote_host == "localhost" || remote_host == "127.0.0.1" 
               command = "rsync -#{rsync_opts} #{src_path} #{remote_path}/"
             else
+              puts "rsync -e 'ssh -p#{port} -i #{priv_key}' -#{rsync_opts} #{src_path} #{remote_user}@#{remote_host}:/#{remote_path}"
               command = "rsync -e 'ssh -p#{port} -i #{priv_key}' -#{rsync_opts} #{src_path} #{remote_user}@#{remote_host}:/#{remote_path}"
             end 
 

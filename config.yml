@@ -1,9 +1,34 @@
 ---
-# logging config
-log: stdout # default is stdout, or provide path to log file
+### Logging config (default is stdout, or provide path to log file)
+# log: stdout
+# log: /var/log/poni.log
 
-# remote syncs
+### optional Global sync settings
+remote_host: nycweb1
+remote_path: /tmp
+remote_user: bob
+priv_key: /home/bob/.ssh/id_rsa
+# rsync_opts: 
+# interval:
+# recurse: 
+
+
+## Remote syncs (can specify sync settings for each file or folder)
 sync:
+  ### these 2 syncs will use default Global sync values (will sync to bob@nycweb1:/tmp)
+  /opt/dir1: []
+  /opt/dir2: []
+
+  ### these syncs use specific sync values
+  /opt/dir3:
+    remote_host: nycweb1
+    remote_path: /opt
+    remote_user: jsmith
+    priv_key: /home/jsmith/.ssh/id_rsa
+    rsync_opts: azBP
+    interval: 15
+    recurse: true
+
   /home/joe/test:
     remote_host: localhost
     remote_path: /tmp/
@@ -11,18 +36,10 @@ sync:
     priv_key: /home/joe/.ssh/id_ed25519
     rsync_opts: azvPj
 
-  /opt/dir1:
-    remote_host: nycweb1
-    remote_path: /opt
-    remote_user: jsmith
-    priv_key: /home/jsmith/.ssh/id_rsa
-    rsync_opts: azBP
-    interval: 15
-    recurse: "true"
 
   /var/log/syslog:
     remote_host: web9
     remote_path: /mnt/backup/logs/host123
     remote_user: root
     priv_key: /root/.ssh/id_rsa
-    recurse: "true"
+    recurse: false
