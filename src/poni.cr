@@ -1,9 +1,14 @@
+#pp!
+
 require "logger"
 require "option_parser"
-require "totem"
+#require "totem"
 require "inotify"
 require "./watcher"
 require "colorize"
+require "yaml"
+
+
 
 module Poni
   VERSION = "0.1.2"
@@ -29,23 +34,31 @@ module Poni
 
   abort "config file is missing", 1 if !File.file? cfgfile
   
-  begin
-    totem = Totem.from_file cfgfile
+  begin 
+    cfg = YAML.parse(File.read(cfgfile)).as_h
   rescue exception
-    abort "unable to open config file", 1
+    abort "unable to read config file", 1
   end
 
-  channel = Channel(Bool).new
-  recursive = false 
 
-  # configure logging
-  totem.set_default("log", "stdout")
-  log_path = totem.get("log").as_s
+  if cfg.has_key?("defaults")
+    defaults = cfg["defaults"].as_h
+  end
+#  defaults = cfg["defaults"]
+  puts typeof(defaults)
+#  defaults = cfg.fetch("defaults")
+  ## logging options
   begin
+    if cfg.has_key?("log_path")
+      log_path = cfg["log_path"].as_s
+    else
+      log_path = "stdout"
+    end
+     
     if log_path != "stdout"
       file = File.new(log_path, "a")
       writer = IO::MultiWriter.new(file, STDOUT)
-      log= Logger.new(writer, level: Logger::INFO)
+      log = Logger.new(writer, level: Logger::INFO)
     else
       log = Logger.new(STDOUT, level: Logger::INFO)
     end
@@ -53,86 +66,90 @@ module Poni
     abort exception, 1
   end
 
-  # get Global values
-  totem.set_defaults({
-    "remote_path" => "",
-    "remote_host" => "",
-    "remote_user" => "",
-    "interval" => 3,
-    "port" => 22,
-    "recurse" => "false",
-    "rsync_opts" => "azP"
-  })
+  channel = Channel(Bool).new 
 
-#  remote_path = totem.get("remote_path").as_s
+#  puts defaults["remote_path"]
+
+  # parse each sync config and spawn into background
+  begin
+    
+    syncs = cfg["sync"].as_h
+
+    syncs.each do | sync, val |
+      v = val.as_h
+#      puts "v #{v}"
+#      puts typeof(v)
+      puts defaults
+      puts typeof(defaults)
+      #a = v.fetch("remote_host", defaults)
+      default_remote_host = defaults.fetch("remote_host", "")
+      remote_host = v.fetch("remote_host", default_remote_host)
+      # remote_path = v.fetch("remote_path", defaults["remote_path"])
+      # remote_user = v.fetch("remote_user", defaults["remote_user"])
+      # priv_key = v.fetch("priv_key", defaults["priv_key"])
+      # port = v.fetch("port", defaults["port"])
+      # recurse = v.fetch("recurse", defaults["recurse"])
+      # rsync_opts = v.fetch("rsync_opts", defaults["rsync_opts"])
+      # interval = v.fetch("interval", defaults["interval"])
+
+      # if recurse == "true" || recurse == true
+      #   recursive = true 
+      # elsif recurse == "false" || recurse == false
+      #   recursive = false
+      # end
+
+#      puts "recursive #{recursive}"
+
+
+    end
+  rescue exception
+    log.fatal(exception)
+    abort "error running sync: #{exception}", 1
+  end
+
+
 
  # puts remote_path
   begin
-    totem.get("sync").as_h.each do |key, value|
-      puts key
-      puts value
-      ## if key is set to pick up global variables
-      if value.size < 1
-        puts "GLOBAL"
-        begin
-          remote_path = totem.get("remote_path").as_s
-          remote_host = totem.get("remote_host").as_s
-          remote_user = totem.get("remote_user").as_s
-          priv_key = totem.get("priv_key").as_s
-          interval = totem.get("interval").as_i
-          rsync_opts = totem.get("rsync_opts").as_s
-          port = totem.get("port").as_i
-          recurse = totem.get("recurse")
-        rescue exception
-          log.fatal("unable to get config values: #{exception}")
-          abort "unable to get config values: #{exception}", 1
-        end  
-      else
-        puts "NOT GLOBAL"
-        ## get custom values for each sync
-        totem.set_default("sync.#{key}.interval", 3)
-        totem.set_default("sync.#{key}.rsync_opts", "azP")
-        totem.set_default("sync.#{key}.port", 22)
-        totem.set_default("sync.#{key}.recurse", "false")
+    puts "test"
+  #       # get YAML config values
+  #       begin
+  #         puts "sync.#{key}.remote_path".colorize.red
+  #         remote_path = totem.get("sync.#{key}.remote_path").as_s
+  #         remote_host = totem.get("sync.#{key}.remote_host").as_s
+  #         remote_user = totem.get("sync.#{key}.remote_user").as_s
+  #         priv_key = totem.get("sync.#{key}.priv_key").as_s
+  #         interval = totem.get("sync.#{key}.interval").as_i
+  #         rsync_opts = totem.get("sync.#{key}.rsync_opts").as_s
+  #         port = totem.get("sync.#{key}.port").as_i
+  #         recurse = totem.get("sync.#{key}.recurse")
+  #       rescue exception
+  #         log.fatal("unable to get config values: #{exception}")
+  #         abort "unable to get config values: #{exception}", 1
+  #       end
 
-        # get YAML config values
-        begin
-          puts "sync.#{key}.remote_path".colorize.red
-          remote_path = totem.get("sync.#{key}.remote_path").as_s
-          remote_host = totem.get("sync.#{key}.remote_host").as_s
-          remote_user = totem.get("sync.#{key}.remote_user").as_s
-          priv_key = totem.get("sync.#{key}.priv_key").as_s
-          interval = totem.get("sync.#{key}.interval").as_i
-          rsync_opts = totem.get("sync.#{key}.rsync_opts").as_s
-          port = totem.get("sync.#{key}.port").as_i
-          recurse = totem.get("sync.#{key}.recurse")
-        rescue exception
-          log.fatal("unable to get config values: #{exception}")
-          abort "unable to get config values: #{exception}", 1
-        end
+  #     end # if value.size < 1
 
-      end # if value.size < 1
-
-      log.error("#{key} source file or directory is missing") if !File.exists? key
-      abort "#{key} source file or directory is missing", 1 if !File.exists? key
+#      log.error("#{key} source file or directory is missing") if !File.exists? key
+#      abort "#{key} source file or directory is missing", 1 if !File.exists? key
       
   
       
-      if recurse == "true" || recurse == true
-          recursive = true 
-      elsif recurse == "false" || recurse == false
-          recursive = false
-      end
-      puts "interval #{interval}"
-      puts "recurse #{recurse}"
-      puts "#{remote_user}@#{remote_host}:/#{remote_path}"
+      # if recurse == "true" || recurse == true
+      #     recursive = true 
+      # elsif recurse == "false" || recurse == false
+      #     recursive = false
+      # end
+      # puts "interval #{interval}"
+      # puts "recurse #{recurse}"
+      # puts "#{remote_user}@#{remote_host}:/#{remote_path}"
       
-      Watcher.spawn_watcher(key, remote_user, remote_host, remote_path, rsync_opts, priv_key, port, interval, recursive, log)
+      # Watcher.spawn_watcher(key, remote_user, remote_host, remote_path, rsync_opts, priv_key, port, interval, recursive, log)
     
-      puts "-------------------"
-    end ## key
+      # puts "-------------------"
+    #end ## key
   rescue exception
-    log.fatal(exception)
+   # log.fatal(exception)
     abort "error running sync: #{exception}", 1
   end 
 
