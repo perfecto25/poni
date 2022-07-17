@@ -4,13 +4,15 @@
 # log: /var/log/poni.log
 
 ### optional Global sync settings
-remote_host: nycweb1
-remote_path: /tmp
-remote_user: bob
-priv_key: /home/bob/.ssh/id_rsa
-# rsync_opts: 
-# interval:
-# recurse: 
+defaults:
+  remote_host: nycweb1
+  remote_path: /tmp
+  remote_user: bob
+  priv_key: /home/bob/.ssh/id_rsa
+  rsync_opts: azP
+  interval: 3
+  recurse: false
+  port: 22
 
 
 ## Remote syncs (can specify sync settings for each file or folder)
@@ -35,11 +37,3 @@ sync:
     remote_user: joe
     priv_key: /home/joe/.ssh/id_ed25519
     rsync_opts: azvPj
-
-
-  /var/log/syslog:
-    remote_host: web9
-    remote_path: /mnt/backup/logs/host123
-    remote_user: root
-    priv_key: /root/.ssh/id_rsa
-    recurse: false

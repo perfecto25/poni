@@ -2,7 +2,6 @@
 
 require "logger"
 require "option_parser"
-#require "totem"
 require "inotify"
 require "./watcher"
 require "colorize"
@@ -66,6 +65,7 @@ module Poni
 
   # parse each sync config and spawn into background
   begin
+
     # get sync values, if no value then use default fallback
     cfg["sync"].as_h.each do | sync, val |
       remote_host = val.as_h.fetch("remote_host", cfg["defaults"]["remote_host"])
@@ -77,8 +77,6 @@ module Poni
       rsync_opts = val.as_h.fetch("rsync_opts", cfg["defaults"]["rsync_opts"])
       interval = val.as_h.fetch("interval", cfg["defaults"]["interval"])
 
-      # default recurse 
-      recurse_bool = false
       
       if recurse == "true" || recurse == true
         recurse_bool = true
