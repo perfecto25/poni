@@ -6,7 +6,7 @@ require "schedule"
 module Poni::Watcher
   extend self
   
-  def spawn_watcher(src_path, remote_user, remote_host, remote_path, rsync_opts, priv_key, port, interval, recurse, log)
+  def spawn_watcher(src_path, remote_user, remote_host, remote_path, rsync_opts, priv_key, port, interval, recurse_bool, log)
     channel = Channel(String).new
     log.info("watching #{src_path}")
     
@@ -15,7 +15,7 @@ module Poni::Watcher
 
     spawn do
       begin
-        Inotify.watch src_path, recurse do |event| 
+        Inotify.watch src_path, recurse_bool do |event| 
           log.info("file modified: #{event.name}, source path: #{src_path}")
           sync_now = true
           Fiber.yield        
@@ -36,6 +36,7 @@ module Poni::Watcher
             if remote_host == "localhost" || remote_host == "127.0.0.1" 
               command = "rsync -#{rsync_opts} #{src_path} #{remote_path}/"
             else
+              puts "rsync -e 'ssh -p#{port} -i #{priv_key}' -#{rsync_opts} #{src_path} #{remote_user}@#{remote_host}:/#{remote_path}"
               command = "rsync -e 'ssh -p#{port} -i #{priv_key}' -#{rsync_opts} #{src_path} #{remote_user}@#{remote_host}:/#{remote_path}"
             end 
 

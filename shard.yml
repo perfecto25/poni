@@ -13,8 +13,6 @@ dependencies:
     github: petoem/inotify.cr
   logger:
     github: crystal-lang/logger.cr
-  totem:
-    github: icyleaf/totem
   schedule:
     github: hugoabonizio/schedule.cr
   

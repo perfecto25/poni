@@ -67,6 +67,15 @@ place each Sync configuration under "Sync" section, here are some examples:
 
 Poni will read each file or folder path as a separate sync directive, read the remote host, remote path, remote user and any given rsync options or sync interval.
 
+For syncs that have same configuration (ie, same remote_host, remote_user, etc) - can use Defaults section for all global default values,
+
+    defaults:
+      remote_host: default-host-name
+      remote_user: default-user
+      remote_path: /default/path
+      priv_key: default-ssh-key
+      interval: default is 3 
+
 Make sure the user you specify in the systemd service script is able to access the SSH private key path, otherwise the sync wont work.
 
 Once config file is ready, start Poni service,

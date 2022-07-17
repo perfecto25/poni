@@ -1,0 +1,62 @@
+---
+### Logging config (default is stdout, or provide path to log file)
+# log: stdout
+# log: /var/log/poni.log
+
+### optional Default sync settings
+defaults:
+ remote_host: qbtm-uat
+ remote_path: /tmp/poni
+ remote_user: mreider
+ priv_key: /home/mreider/.ssh/id_rsa
+ rsync_opts: azP
+ interval: 4
+ port: 22
+ recurse: false
+
+# ## Remote syncs (can specify sync settings for each file or folder)
+sync:
+  ### these 2 syncs will use default Global sync values (will sync to bob@nycweb1:/tmp)
+  /home/mreider/dir1/nodot: 
+    remote_host: qbtm-uat 
+    remote_path: /tmp/cache  
+    remote_user: mreider
+    priv_key: /home/mreider/.ssh/id_rsa
+    recurse: true
+
+
+  ### these 2 syncs will use default Global sync values (will sync to bob@nycweb1:/tmp)
+  /home/mreider/dir1/.withdot: []
+#    recurse: true
+#    port: 22
+    #remote_host: qbtm-uat 
+    #remote_path: /tmp/cache  
+    #remote_user: mreider
+ #   priv_key: /home/mreider/.ssh/id_rsa
+  #  recurse: true
+#  /opt/dir2: []
+
+  ### these syncs use specific sync values
+#  /opt/dir3:
+#    remote_host: qbtm-uat
+#    remote_path: /home/mreider
+#    remote_user: mreider
+#    priv_key: /home/mreider/.ssh/id_rsa
+#    rsync_opts: azP
+#    interval: 15
+#    recurse: true
+
+#   /home/joe/test:
+#     remote_host: localhost
+#     remote_path: /tmp/
+#     remote_user: joe
+#     priv_key: /home/joe/.ssh/id_ed25519
+#     rsync_opts: azvPj
+
+
+#   /var/log/syslog:
+#     remote_host: web9
+#     remote_path: /mnt/backup/logs/host123
+#     remote_user: root
+#     priv_key: /root/.ssh/id_rsa
+#     recurse: false

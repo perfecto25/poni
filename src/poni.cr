@@ -1,11 +1,16 @@
+#pp!
+
 require "logger"
 require "option_parser"
-require "totem"
 require "inotify"
 require "./watcher"
+require "colorize"
+require "yaml"
+
+
 
 module Poni
-  VERSION = "0.1.1"
+  VERSION = "0.1.2"
   cfgfile = "/etc/poni/config.yml"
 
   OptionParser.parse do |parser|
@@ -28,23 +33,24 @@ module Poni
 
   abort "config file is missing", 1 if !File.file? cfgfile
   
-  begin
-    totem = Totem.from_file cfgfile
+  begin 
+    cfg = YAML.parse(File.read(cfgfile)).as_h    
   rescue exception
-    abort "unable to open config file", 1
+    abort "unable to read config file", 1
   end
 
-  channel = Channel(Bool).new
-  recursive = false 
-
-  # configure logging
-  totem.set_default("log", "stdout")
-  log_path = totem.get("log").as_s
+  ## logging options
   begin
+    if cfg.has_key?("log_path")
+      log_path = cfg["log_path"].as_s
+    else
+      log_path = "stdout"
+    end
+     
     if log_path != "stdout"
       file = File.new(log_path, "a")
       writer = IO::MultiWriter.new(file, STDOUT)
-      log= Logger.new(writer, level: Logger::INFO)
+      log = Logger.new(writer, level: Logger::INFO)
     else
       log = Logger.new(STDOUT, level: Logger::INFO)
     end
@@ -52,45 +58,50 @@ module Poni
     abort exception, 1
   end
 
+  channel = Channel(Bool).new 
+
+  # parse each sync config and spawn into background
   begin
-    totem.get("sync").as_h.keys.each do |key|
-      log.error("#{key} source file or directory is missing") if !File.exists? key
-      abort "#{key} source file or directory is missing", 1 if !File.exists? key
 
-      totem.set_default("sync.#{key}.interval", 3)
-      totem.set_default("sync.#{key}.rsync_opts", "azP")
-      totem.set_default("sync.#{key}.port", 22)
-      totem.set_default("sync.#{key}.recurse", "false")
-      
-
-  
-      # get YAML config values
-      begin
-        remote_path = totem.get("sync.#{key}.remote_path").as_s
-        remote_host = totem.get("sync.#{key}.remote_host").as_s
-        remote_user = totem.get("sync.#{key}.remote_user").as_s
-        priv_key = totem.get("sync.#{key}.priv_key").as_s
-        interval = totem.get("sync.#{key}.interval").as_i
-        rsync_opts = totem.get("sync.#{key}.rsync_opts").as_s
-        port = totem.get("sync.#{key}.port").as_i
-        recurse = totem.get("sync.#{key}.recurse")
-      rescue exception
-        log.fatal("unable to get config values: #{exception}")
-        abort "unable to get config values: #{exception}", 1
+    # get sync values, if no value then use default fallback
+    cfg["sync"].as_h.each do | sync, val |
+      if val.size > 0
+        remote_host = val.as_h.fetch("remote_host", cfg["defaults"]["remote_host"])
+        remote_path = val.as_h.fetch("remote_path", cfg["defaults"]["remote_path"])
+        remote_user = val.as_h.fetch("remote_user", cfg["defaults"]["remote_user"])
+        priv_key = val.as_h.fetch("priv_key", cfg["defaults"]["priv_key"])
+        port = val.as_h.fetch("port", cfg["defaults"]["port"])
+        recurse = val.as_h.fetch("recurse", cfg["defaults"]["recurse"])
+        rsync_opts = val.as_h.fetch("rsync_opts", cfg["defaults"]["rsync_opts"])
+        interval = val.as_h.fetch("interval", cfg["defaults"]["interval"])
+      else 
+        remote_host = cfg["defaults"]["remote_host"]
+        remote_path = cfg["defaults"]["remote_path"]
+        remote_user = cfg["defaults"]["remote_user"]
+        priv_key = cfg["defaults"]["priv_key"]
+        port = cfg["defaults"]["port"]
+        recurse = cfg["defaults"]["recurse"]
+        rsync_opts = cfg["defaults"]["rsync_opts"]
+        interval = cfg["defaults"]["interval"]
       end
-      
+
+      recurse_bool = false 
+
       if recurse == "true" || recurse == true
-          recursive = true 
+        recurse_bool = true
       elsif recurse == "false" || recurse == false
-          recursive = false
+        recurse_bool = false
       end
-      
-      Watcher.spawn_watcher(key, remote_user, remote_host, remote_path, rsync_opts, priv_key, port, interval, recursive, log)
-    end ## key
+
+      # start Watcher 
+      Watcher.spawn_watcher(sync.to_s, remote_user.to_s, remote_host.to_s, remote_path.to_s, 
+        rsync_opts.to_s, priv_key.to_s, port.to_s.to_i, interval.to_s.to_i, recurse_bool, log)
+
+    end
   rescue exception
     log.fatal(exception)
     abort "error running sync: #{exception}", 1
-  end 
+  end
 
   while 1 == 1
     if channel.closed?
