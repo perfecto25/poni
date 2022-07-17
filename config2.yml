@@ -5,9 +5,9 @@
 
 ### optional Default sync settings
 defaults:
- remote_host: qbtm-uat-default
- remote_path: /tmp-default
- remote_user: mreider-default
+ remote_host: qbtm-uat
+ remote_path: /tmp/poni
+ remote_user: mreider
  priv_key: /home/mreider/.ssh/id_rsa
  rsync_opts: azP
  interval: 4
@@ -27,7 +27,8 @@ sync:
 
   ### these 2 syncs will use default Global sync values (will sync to bob@nycweb1:/tmp)
   /home/mreider/dir1/.withdot: 
-    recurse: true 
+    recurse: true
+    port: 22
     #remote_host: qbtm-uat 
     #remote_path: /tmp/cache  
     #remote_user: mreider
