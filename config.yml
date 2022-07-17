@@ -2,7 +2,7 @@
 ### Logging config (default is stdout, or provide path to log file)
 # log: stdout
 # log: /var/log/poni.log
-
+  
 ### optional Global sync settings
 defaults:
   remote_host: nycweb1

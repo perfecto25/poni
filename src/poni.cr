@@ -39,9 +39,6 @@ module Poni
     abort "unable to read config file", 1
   end
 
-
-  puts cfg["defaults"]["remote_host"]
-
   ## logging options
   begin
     if cfg.has_key?("log_path")
@@ -68,16 +65,28 @@ module Poni
 
     # get sync values, if no value then use default fallback
     cfg["sync"].as_h.each do | sync, val |
-      remote_host = val.as_h.fetch("remote_host", cfg["defaults"]["remote_host"])
-      remote_path = val.as_h.fetch("remote_path", cfg["defaults"]["remote_path"])
-      remote_user = val.as_h.fetch("remote_user", cfg["defaults"]["remote_user"])
-      priv_key = val.as_h.fetch("priv_key", cfg["defaults"]["priv_key"])
-      port = val.as_h.fetch("port", cfg["defaults"]["port"])
-      recurse = val.as_h.fetch("recurse", cfg["defaults"]["recurse"])
-      rsync_opts = val.as_h.fetch("rsync_opts", cfg["defaults"]["rsync_opts"])
-      interval = val.as_h.fetch("interval", cfg["defaults"]["interval"])
+      if val.size > 0
+        remote_host = val.as_h.fetch("remote_host", cfg["defaults"]["remote_host"])
+        remote_path = val.as_h.fetch("remote_path", cfg["defaults"]["remote_path"])
+        remote_user = val.as_h.fetch("remote_user", cfg["defaults"]["remote_user"])
+        priv_key = val.as_h.fetch("priv_key", cfg["defaults"]["priv_key"])
+        port = val.as_h.fetch("port", cfg["defaults"]["port"])
+        recurse = val.as_h.fetch("recurse", cfg["defaults"]["recurse"])
+        rsync_opts = val.as_h.fetch("rsync_opts", cfg["defaults"]["rsync_opts"])
+        interval = val.as_h.fetch("interval", cfg["defaults"]["interval"])
+      else 
+        remote_host = cfg["defaults"]["remote_host"]
+        remote_path = cfg["defaults"]["remote_path"]
+        remote_user = cfg["defaults"]["remote_user"]
+        priv_key = cfg["defaults"]["priv_key"]
+        port = cfg["defaults"]["port"]
+        recurse = cfg["defaults"]["recurse"]
+        rsync_opts = cfg["defaults"]["rsync_opts"]
+        interval = cfg["defaults"]["interval"]
+      end
 
-      
+      recurse_bool = false 
+
       if recurse == "true" || recurse == true
         recurse_bool = true
       elsif recurse == "false" || recurse == false

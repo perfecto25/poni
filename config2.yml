@@ -26,9 +26,9 @@ sync:
 
 
   ### these 2 syncs will use default Global sync values (will sync to bob@nycweb1:/tmp)
-  /home/mreider/dir1/.withdot: 
-    recurse: true
-    port: 22
+  /home/mreider/dir1/.withdot: []
+#    recurse: true
+#    port: 22
     #remote_host: qbtm-uat 
     #remote_path: /tmp/cache  
     #remote_user: mreider
