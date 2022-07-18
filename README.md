@@ -42,6 +42,8 @@ start the service
 
     systemctl restart poni
 
+---
+
 ## Usage
 
 Configure Poni config file by editing /etc/poni/config.yml
@@ -71,10 +73,19 @@ For syncs that have same configuration (ie, same remote_host, remote_user, etc) 
 
     defaults:
       remote_host: default-host-name
-      remote_user: default-user
-      remote_path: /default/path
+      remote_user: default-user-name
+      remote_path: /default/path/on/remote/host
       priv_key: default-ssh-key
-      interval: default is 3 
+      interval: 3
+
+    sync:
+      /home/user/dir1: []  # this sync will use all the default values above
+      
+      /home/bob/files: []  # this sync will use all the default values above
+      
+      /opt/dir:
+        interval: 30  # this sync will use all default values except for Interval
+
 
 Make sure the user you specify in the systemd service script is able to access the SSH private key path, otherwise the sync wont work.
 
@@ -95,6 +106,35 @@ Poni will spawn independent sync workers for each Sync configuration and use INo
 To decrease the amount of syncs between your Poni server and partner/slave hosts, use "interval" value in seconds. Specifying an Interval makes Poni sleep (interval) seconds before syncing the changes. By default, Poni will sync every 3 seconds if a change is detected.
 
 To add additional rsync options, use rsync_opts parameter. Default rsync flags are "azP"
+
+---
+
+## SSH Sockets
+
+because Poni will make constant rsync calls between the host and partner server, its a good idea to add a SSH socket for this connection, sockets will store SSH session in a file, and will decrease the CPU and MEM usage of each sync (since it doesnt have to re-establish SSH handshake with each rsync call)
+
+for the user that will be making the rsync call, create a SSH config file, ie
+
+    cat /home/user/.ssh/config
+
+    Host <name of partner/slave host>
+        StrictHostKeyChecking no
+        UserKnownHostsFile=/dev/null
+        TCPKeepAlive yes
+        ServerAliveInterval 120
+        Compression yes
+        ControlMaster auto
+        ControlPath ~/.ssh/sockets/%r@%h:%p
+        ControlPersist yes
+        ControlPersist 480m
+
+create a sockets directory
+
+    mkdir /home/user/.ssh/sockets
+
+restart Poni, it will generate a socket file in /home/user/.ssh/sockets and use this socket file for any future connections (and will decrease your CPU and MEM usage)
+
+---
 
 ## Development
 
