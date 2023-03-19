@@ -48,30 +48,35 @@ start the service
 
 Configure Poni config file by editing /etc/poni/config.yml
 
-place each Sync configuration under "Sync" section, here are some examples:
+place each Sync configuration under "Sync" section, and give each sync a unique name/description
+
+see config.yaml for examples
 
     sync:
-        /opt/dir1:
-            remote_host: nycweb1                ## target host
-            remote_path: /opt                   ## target path on remote host
-            remote_user: jsmith                 ## user which will initiate rsync
-            priv_key: /home/jsmith/.ssh/id_rsa  ## path to user's private SSH key
-            port: 1122                          ## custom SSH port, default = 22
-            rsync_opts: azBP                    ## additional Rsync flags (default: azP)
-            interval: 15                        ## sleep time in seconds before rsyncing on a change, default = 3
-            recurse: true                       ## watch directories recursively for changes, default = false
+      "sync dir1 to nycweb1":               ## unique name/description for each sync
+        source_path: /opt/dir1              ## local path that will be synced to target
+        remote_host: nycweb1                ## target host
+        remote_path: /opt                   ## target path on remote host
+        remote_user: jsmith                 ## user which will initiate rsync
+        priv_key: /home/jsmith/.ssh/id_rsa  ## path to user's private SSH key
+        port: 1122                          ## custom SSH port, default = 22
+        rsync_opts: azBP                    ## additional Rsync flags (default: azP)
+        interval: 15                        ## sleep time in seconds before rsyncing on a change, default = 3
+        recurse: true                       ## watch directories recursively for changes, default = false
 
-        /var/log/syslog:
-            remote_host: web9
-            remote_path: /mnt/backup/logs/host123
-            remote_user: root
-            priv_key: /root/.ssh/id_rsa
+      "sync syslog to web9":
+        source_path: /var/log/syslog
+        remote_host: web9
+        remote_path: /mnt/backup/logs/host123
+        remote_user: root
+        priv_key: /root/.ssh/id_rsa
 
 Poni will read each file or folder path as a separate sync directive, read the remote host, remote path, remote user and any given rsync options or sync interval.
 
 For syncs that have same configuration (ie, same remote_host, remote_user, etc) - can use Defaults section for all global default values,
 
     defaults:
+      source_path: /my/local/source/path
       remote_host: default-host-name
       remote_user: default-user-name
       remote_path: /default/path/on/remote/host
@@ -79,13 +84,56 @@ For syncs that have same configuration (ie, same remote_host, remote_user, etc) 
       interval: 3
 
     sync:
-      /home/user/dir1: []  # this sync will use all the default values above
-      
-      /home/bob/files: []  # this sync will use all the default values above
-      
-      /opt/dir:
+      "sync default path to default target path":
+        /home/user/dir1: []  # this sync will use all the default values above
+
+      "sync default path to default target except for Interval":
         interval: 30  # this sync will use all default values except for Interval
 
+
+if a Default value is not provided for port, interval, rsync_opts, and recurse, and these values are not provided for invidual Sync configs, Poni will assign a package default to each one,
+
+- port = 22
+- interval = 10 (seconds)
+- rsync_opts = "azP"
+- recurse = false
+
+---
+
+## Sync the same source file or directory to multiple remote endpoints
+
+To sync the same source file or directory to multiple destinations, use the "multiple" key word,
+
+```
+sync:
+
+  # sync Shared configs in /opt/share/configs/* to multiple targets using 'multiple' key name
+
+  /opt/shared/configs/:
+
+    multiple: # this is a special keyword telling Poni to sync same source files to multiple destinations
+
+      Sync to Joe: # here we will sync source path of /opt/shared/configs to remote Mac desktop of user Joe. This name can be anything you want.
+        remote_host: joe-mac
+        remote_path: /Users/joe/configs/
+        remote_user: joe
+        priv_key: /root/.ssh/id_ed25519 # Here, the source host's root user's pub key is in remote host's Joe's authorized_keys file
+        recurse: true
+        rsync opts: zvjP
+
+      Sync to Linda: # here we will sync source path of /opt/shared/configs to remote Mac desktop of user Linda
+        remote_host: linda-mac
+        remote_path: /Users/linda/configs/
+        remote_user: linda
+        priv_key: /home/linda/.ssh/id_ed25519 # Here, the source host's Linda pub key is in remote host's (Mac) Linda's authorized_keys file
+        ## all other settings will come from Defaults, ie "recurse" will be set to default "false"
+
+      Sync to Default target: [] # here we will sync source path of /opt/shared/configs to default target of nycweb1 (see Default section above)
+```
+
+---
+
+## Poni Service
 
 Make sure the user you specify in the systemd service script is able to access the SSH private key path, otherwise the sync wont work.
 
@@ -137,6 +185,12 @@ restart Poni, it will generate a socket file in /home/user/.ssh/sockets and use 
 ---
 
 ## Development
+
+for Fedora/RHEL/Centos/Rocky builds install libyaml-devel
+
+    yum --enablerepo=powertools install libyaml-devel libffi-devel
+
+
 
 to build a test binary
 
