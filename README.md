@@ -131,6 +131,8 @@ sync:
       Sync to Default target: [] # here we will sync source path of /opt/shared/configs to default target of nycweb1 (see Default section above)
 ```
 
+Poni will only sync from source to remote target on NEW or MODIFY events. It does not detele anything on the remote endpoint when you delete a file or directory on your source (local instance running the Poni service)
+
 ---
 
 ## Poni Service

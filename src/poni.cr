@@ -70,19 +70,16 @@ module Poni
 
   def get_val(lookup, sync, data, cfg, log)
     if data.as_h.has_key?(lookup)
-      log.warn("y1")
       return data[lookup]?
     end
 
     if cfg.has_key?("defaults")
       if cfg["defaults"].as_h.has_key?(lookup)
-        log.warn("y2")
         return cfg["defaults"][lookup]?
       end
     end
 
     if DEFAULTS.has_key?(lookup)
-      log.warn("y3")
       return DEFAULTS[lookup]?
     end
 
@@ -107,18 +104,22 @@ module Poni
       recurse = (get_val "recurse", sync, data, cfg, log).to_s
       rsync_opts = (get_val "rsync_opts", sync, data, cfg, log).to_s
       interval = (get_val "interval", sync, data, cfg, log).to_s
-      # recurse_bool = false
-
-      # if recurse == "true" || recurse == true
-      #   recurse_bool = true
-      # elsif recurse == "false" || recurse == false
-      #   recurse_bool = false
-      # end
 
       # for every source_path, create array of remote_paths and related data
       arr = [] of Hash(String, String)
-      data = {"remote_path" => remote_path, "interval" => interval}
+      data = {
+        "remote_host" => remote_host,
+        "remote_path" => remote_path,
+        "remote_user" => remote_user,
+        "priv_key"    => priv_key,
+        "port"        => port,
+        "recurse"     => recurse,
+        "rsync_opts"  => rsync_opts,
+        "interval"    => interval,
+      }
+
       arr << data
+
       if !map.has_key?(source_path)
         map[source_path] = arr
       else
@@ -130,14 +131,15 @@ module Poni
       # Watcher.spawn_watcher(sync.to_s, remote_user.to_s, remote_host.to_s, remote_path.to_s,
       #  rsync_opts.to_s, priv_key.to_s, port.to_s.to_i, interval.to_s.to_i, recurse_bool, log)
     end
+
+    # iterate every source_path in Map, and spawn a watcher
+    map.each do |src_path, data|
+      Watcher.spawn_watcher(src_path, data, log)
+    end
   rescue exception
     log.fatal(exception)
     abort "error running sync: #{exception}", 1
   end
-
-  log.info(map)
-  log.info(typeof(map))
-  # spawn the watcher!
 
   while 1 == 1
     if channel.closed?
