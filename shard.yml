@@ -15,6 +15,8 @@ dependencies:
     github: crystal-lang/logger.cr
   schedule:
     github: hugoabonizio/schedule.cr
+  tasker:
+    github: spider-gazelle/tasker
 
 crystal: 1.2.1
 

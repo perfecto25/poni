@@ -57,12 +57,12 @@ see config.yaml for examples
         source_path: /opt/dir1              ## local path that will be synced to target
         remote_host: nycweb1                ## target host
         remote_path: /opt                   ## target path on remote host
-        remote_user: jsmith                 ## user which will initiate rsync
-        priv_key: /home/jsmith/.ssh/id_rsa  ## path to user's private SSH key
+        remote_user: jsmith                 ## SSH user which will initiate rsync
+        priv_key: /home/jsmith/.ssh/id_rsa  ## path to user's private SSH key (on the local host running Poni service)
         port: 1122                          ## custom SSH port, default = 22
         rsync_opts: azBP                    ## additional Rsync flags (default: azP)
-        interval: 15                        ## sleep time in seconds before rsyncing on a change, default = 3
-        recurse: true                       ## watch directories recursively for changes, default = false
+        interval: 15                        ## sleep time in seconds before rsyncing on a change, default = 10
+        recurse: true                       ## watch directories recursively for changes (ie, watch subdirectories), default = false
 
       "sync syslog to web9":
         source_path: /var/log/syslog
@@ -76,7 +76,7 @@ Poni will read each file or folder path as a separate sync directive, read the r
 For syncs that have same configuration (ie, same remote_host, remote_user, etc) - can use Defaults section for all global default values,
 
     defaults:
-      source_path: /my/local/source/path
+      source_path: /my/default/source/path
       remote_host: default-host-name
       remote_user: default-user-name
       remote_path: /default/path/on/remote/host
@@ -84,14 +84,13 @@ For syncs that have same configuration (ie, same remote_host, remote_user, etc) 
       interval: 3
 
     sync:
-      "sync default path to default target path":
-        /home/user/dir1: []  # this sync will use all the default values above
+      "sync default path to default target path": []  # this sync will use all the default values above
 
       "sync default path to default target except for Interval":
         interval: 30  # this sync will use all default values except for Interval
 
 
-if a Default value is not provided for port, interval, rsync_opts, and recurse, and these values are not provided for invidual Sync configs, Poni will assign a package default to each one,
+if a Default value is not provided for port, interval, rsync_opts, and recurse, and these values are not provided for invidual Sync configs, Poni will assign an internal default to each one,
 
 - port = 22
 - interval = 10 (seconds)
@@ -100,42 +99,48 @@ if a Default value is not provided for port, interval, rsync_opts, and recurse, 
 
 ---
 
-## Sync the same source file or directory to multiple remote endpoints
+## Syncing same source_path to multiple remote_paths
 
-To sync the same source file or directory to multiple destinations, use the "multiple" key word,
+if same source_path is configured for multiple remote_paths, then Poni will use the "interval" value of the last config for that source_path, ie
 
 ```
 sync:
+  "sync to web1 - JOE":
+    source_path: /my/local/file
+    remote_path: /home/joe/
+    remote_host: web1
+    interval: 30
 
-  # sync Shared configs in /opt/share/configs/* to multiple targets using 'multiple' key name
+  "sync to web1 - MARY":
+    source_path: /my/local/file
+    remote_path: /home/mary
+    remote_host: web1
+    interval: 5
 
-  /opt/shared/configs/:
-
-    multiple: # this is a special keyword telling Poni to sync same source files to multiple destinations
-
-      Sync to Joe: # here we will sync source path of /opt/shared/configs to remote Mac desktop of user Joe. This name can be anything you want.
-        remote_host: joe-mac
-        remote_path: /Users/joe/configs/
-        remote_user: joe
-        priv_key: /root/.ssh/id_ed25519 # Here, the source host's root user's pub key is in remote host's Joe's authorized_keys file
-        recurse: true
-        rsync opts: zvjP
-
-      Sync to Linda: # here we will sync source path of /opt/shared/configs to remote Mac desktop of user Linda
-        remote_host: linda-mac
-        remote_path: /Users/linda/configs/
-        remote_user: linda
-        priv_key: /home/linda/.ssh/id_ed25519 # Here, the source host's Linda pub key is in remote host's (Mac) Linda's authorized_keys file
-        ## all other settings will come from Defaults, ie "recurse" will be set to default "false"
-
-      Sync to Default target: [] # here we will sync source path of /opt/shared/configs to default target of nycweb1 (see Default section above)
+here the overall sync interval for both remote paths will be 5 seconds
 ```
 
-Poni will only sync from source to remote target on NEW or MODIFY events. It does not detele anything on the remote endpoint when you delete a file or directory on your source (local instance running the Poni service)
 
 ---
 
-## Poni Service
+## Poni process explained
+
+upon startup Poni reads a user-provided config YAML file as demonstrated above
+
+it parses each Sync block and creates an Inotify Watcher which alerts the main thread if a file or directory for each source_path was modified.
+
+After creating a Watcher, Poni will create a background Scheduler which runs every X seconds interval (default is 10 seconds) and checks if there were any change events coming from Watcher
+
+if a change is detected, Scheduler will rsync the changes to the desginated remote host and path.
+
+Poni will only sync from source to remote target on NEW or MODIFY events. It does not delete anything on the remote endpoint when you delete a file or directory on your source (local instance running the Poni service).
+
+If you're looking for a Mirror-type solution that keeps both partners in exactly same state, try https://syncthing.net/
+
+
+---
+
+## Poni SystemD Service
 
 Make sure the user you specify in the systemd service script is able to access the SSH private key path, otherwise the sync wont work.
 
