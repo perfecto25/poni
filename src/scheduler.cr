@@ -10,23 +10,48 @@ module Poni::Scheduler
   extend self
   Log = ::Log.for("Poni::Sched")
 
-  def start_sched(src_path, data, sync_now)
+  def start_sched(src_path, sync_data, sync_now)
     interval = DEFAULTS["interval"] # default
+    Log.warn { src_path }
+    Log.warn { sync_data }
+    Log.warn { sync_now }
 
     # get overal interval for single src_path spanning multiple remote paths
-    data.each do |remote|
-      interval = remote["interval"].to_i
-    end
+    interval = sync_data[0]["interval"].to_i
+    # sync_data.each do |d|
+    #   interval = d["interval"].to_i
+    #   simulate = d["simulate"].to_s
+    #   delete_on_remote = d["delete_on_remote"].to_s
+    # end
 
     Schedule.every(interval.seconds) do
-      # Log.info { "running scheduler for #{src_path} >> #{remote["remote_path"]}" }
-      # Log.info { sync_now[src_path] }
+      Log.warn { "FROM SCHD" }
+      Log.warn { sync_now[src_path] }
       if sync_now[src_path] == true
-        data.each do |remote|
-          Log.info { "SYNCING #{src_path} >> >> #{remote["remote_host"]}:#{remote["remote_path"]} now..intrv #{interval}" }
+        sync_data.each do |d|
+          Log.info { "syncing #{src_path} >> #{d["remote_host"]}:#{d["remote_path"]} now." }
 
           # # SYNC
-          sleep 2.seconds
+          stdout = IO::Memory.new
+          stderr = IO::Memory.new
+
+          begin
+            if d["remote_host"] == "localhost" || d["remote_host"] == "127.0.0.1"
+              command = "rsync -#{d["rsync_opts"]} #{d["src_path"]} #{d["remote_path"]}/"
+            else
+              # puts "rsync -e 'ssh -p#{d["port"]} -i #{d["priv_key"]}' -#{d["rsync_opts"]} #{src_path} #{d["remote_user"]}@#{d["remote_host"]}:/#{d["remote_path"]}"
+              command = "rsync -e 'ssh -p#{d["port"]} -i #{d["priv_key"]}' -#{d["rsync_opts"]} #{src_path} #{d["remote_user"]}@#{d["remote_host"]}:/#{d["remote_path"]}"
+            end
+
+            exit_code = Process.run(command, shell: true, output: stdout, error: stderr).exit_code
+
+            if exit_code != 0
+              Log.error { "error syncing #{src_path} to #{d["remote_host"]}:#{d["remote_path"]}: #{stderr}" }
+            end
+          rescue exception
+            Log.error { exception }
+          end # begin
+
         end # data.each
       end   # sync_now
 

@@ -1,8 +1,4 @@
 ---
-### Logging config (default is stdout, or provide path to log file)
-# log: stdout
-# log: /var/log/poni.log
-
 ### optional Global sync settings
 defaults:
   source_path: /opt/dir1
@@ -12,8 +8,10 @@ defaults:
   priv_key: /home/bob/.ssh/id_rsa
   rsync_opts: azP
   interval: 3
-  recurse: false
-  port: 22
+  recurse: false            # watch source/local directory recursively for changes
+  port: 22                  # default SSH port on the remote end
+  delete_on_remote: false   # if a source file or dir is deleted, delete same file or dir on the remote end
+  simulate: true            # only log potential rsync actions, dont actually do them
 
 ## Remote syncs (can specify sync settings for each file or folder)
 sync:
@@ -68,3 +66,16 @@ sync:
   "sync to Default target": # here we will sync source path of /var/shared/config.json to default target of nycweb1 (see Default section above)
     source_path: /var/shared/config.json
 
+  ## this example will rsync any /home directory thats modified, created or deleted to a remote host (host1:/var/homedirs/)
+  ## if a directory or file is deleted, ie localhost:/home/joe/file1, Poni will delete file1 from host1:/var/homedirs/joe/
+  ## BE VERY CAREFUL WITH DELETE PATHS as you can accidentally delete the parent directory on the remote host if not configured correctly!!
+  ## SET "simulate: true" to see what kind of changes will be made on the remote host before running actual rsync (simulate: false)
+  "sync nested directory":
+    source_path: /home
+    remote_host: host1
+    remote_path: /var/homedirs/
+    remote_user: root
+    priv_key: /root/id_rsa
+    recurse: true
+    delete_on_remote: true
+    simulate: true

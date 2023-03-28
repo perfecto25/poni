@@ -63,6 +63,7 @@ see config.yaml for examples
         rsync_opts: azBP                    ## additional Rsync flags (default: azP)
         interval: 15                        ## sleep time in seconds before rsyncing on a change, default = 10
         recurse: true                       ## watch directories recursively for changes (ie, watch subdirectories), default = false
+        simulate: true                      ## show rsync actions in systemd log but dont do actual rsync or delete actions. default = true
 
       "sync syslog to web9":
         source_path: /var/log/syslog
@@ -82,6 +83,7 @@ For syncs that have same configuration (ie, same remote_host, remote_user, etc) 
       remote_path: /default/path/on/remote/host
       priv_key: default-ssh-key
       interval: 3
+      rsync_opts: aVZPs
 
     sync:
       "sync default path to default target path": []  # this sync will use all the default values above
@@ -133,7 +135,7 @@ After creating a Watcher, Poni will create a background Scheduler which runs eve
 
 if a change is detected, Scheduler will rsync the changes to the desginated remote host and path.
 
-Poni will only sync from source to remote target on NEW or MODIFY events. It does not delete anything on the remote endpoint when you delete a file or directory on your source (local instance running the Poni service).
+Poni will only sync from source to remote target on MODIFY events. It does not delete anything on the remote endpoint when you delete a file or directory on your source (local instance running the Poni service).
 
 If you're looking for a Mirror-type solution that keeps both partners in exactly same state, try https://syncthing.net/
 
@@ -151,10 +153,6 @@ Once config file is ready, start Poni service,
 To view Poni logs, tail the service (if using the default stanard out)
 
     sudo journalctl -f -u poni
-
-or provide a specific log file location in config.yaml
-
-    log: /var/log/poni.log
 
 Poni will spawn independent sync workers for each Sync configuration and use INotify bindings to detect any changes to the configured files or folders. Once a change is detected, Poni will sync the updated file or folder to the remote_host, using the remote_user and priv_key values (only SSH key pairs are allowed for rsyncing)
 

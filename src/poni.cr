@@ -68,10 +68,12 @@ module Poni
 
   # # package default values, if not present in config.yaml
   DEFAULTS = {
-    "port":       22,
-    "recurse":    false,
-    "rsync_opts": "azP",
-    "interval":   10,
+    "port":             22,
+    "recurse":          false,
+    "rsync_opts":       "azP",
+    "interval":         10,
+    "delete_on_remote": false,
+    "simulate":         false,
   }
 
   def get_val(lookup, sync, data, cfg)
@@ -111,18 +113,22 @@ module Poni
       recurse = (get_val "recurse", sync, data, cfg).to_s
       rsync_opts = (get_val "rsync_opts", sync, data, cfg).to_s
       interval = (get_val "interval", sync, data, cfg).to_s
+      delete_on_remote = (get_val "delete_on_remote", sync, data, cfg).to_s
+      simulate = (get_val "simulate", sync, data, cfg).to_s
 
       # for every source_path, create array of remote_paths and related data
       arr = [] of Hash(String, String)
       data = {
-        "remote_host" => remote_host,
-        "remote_path" => remote_path,
-        "remote_user" => remote_user,
-        "priv_key"    => priv_key,
-        "port"        => port,
-        "recurse"     => recurse,
-        "rsync_opts"  => rsync_opts,
-        "interval"    => interval,
+        "remote_host"      => remote_host,
+        "remote_path"      => remote_path,
+        "remote_user"      => remote_user,
+        "priv_key"         => priv_key,
+        "port"             => port,
+        "recurse"          => recurse,
+        "rsync_opts"       => rsync_opts,
+        "interval"         => interval,
+        "delete_on_remote" => delete_on_remote,
+        "simulate"         => simulate,
       }
 
       arr << data
@@ -132,32 +138,15 @@ module Poni
       else
         map[source_path] << data
       end
-
-      # map[sync] << {"remote_host": remote_host, "remote_path": remote_path, "remote_user": remote_user, "priv_key": priv_key}
-      # start Watcher
-      # Watcher.spawn_watcher(sync.to_s, remote_user.to_s, remote_host.to_s, remote_path.to_s,
-      #  rsync_opts.to_s, priv_key.to_s, port.to_s.to_i, interval.to_s.to_i, recurse_bool, log)
     end
 
     # CREATE WATCHERS and SYNC SCHEDULERS
     # iterate every source_path in Map, and spawn a watcher
-    map.each do |src_path, data|
-      Watcher.spawn_watcher(src_path, data, channel)
+    map.each do |src_path, sync_data|
+      Watcher.spawn_watcher(src_path, sync_data, channel)
       sync_now[src_path] = false
-      Scheduler.start_sched(src_path, data, sync_now)
-      # iterate every remote path for every src_path and create scheduler
-#      data.each do |remote|
-        # log.info(data)
-        # sync_now[src_path] = data
-  #      if !sync_now.has_key?(src_path)
- #         sync_now[src_path] = {remote["remote_path"] => false}
-    #    else
-   #       sync_now[src_path][remote["remote_path"]] = false
-     #   end
-
-
-      #end
-      #
+      Log.info { sync_now }
+      Scheduler.start_sched(src_path, sync_data, sync_now)
     end
 
     # CREATE SCHEDULERS
@@ -170,10 +159,14 @@ module Poni
     if channel.closed?
       exit
     else
-      modified_path = channel.receive
-      Log.info { modified_path }
-      sync_now[modified_path] = true
-      # Scheduler.start_sched(modified_path, log)
+      channel_data = channel.receive
+      # Log.debug { cdata }
+      path = channel_data.split(",")[1]
+      Log.warn { path }
+      sync_now[path] = true
+      Log.info { sync_now }
+      # Log.info { sync_now }
+      # Scheduler.start_sched(cdata)
     end
   end
 end # # module
