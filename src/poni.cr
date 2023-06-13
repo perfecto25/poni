@@ -1,18 +1,16 @@
 # pp!
-
-# require "logger"
 require "log"
 require "option_parser"
 require "inotify"
 require "./watcher"
 require "./scheduler"
+require "./log"
 require "colorize"
 require "yaml"
 
 module Poni
   extend self
-
-  Log = ::Log.for("Poni")
+  # Log::Severity = :debug
 
   VERSION = "0.1.3"
   cfgfile = "/etc/poni/config.yml"
@@ -35,7 +33,11 @@ module Poni
     end
   end
 
-  abort "config file is missing", 1 if !File.file? cfgfile
+  begin
+    abort "config file is missing", 1 if !File.file? cfgfile
+  rescue exception
+    puts exception
+  end
 
   begin
     cfg = YAML.parse(File.read(cfgfile)).as_h
@@ -43,37 +45,23 @@ module Poni
     abort "unable to read config file", 1
   end
 
-  # logging options
   begin
-    if cfg.has_key?("log_path")
-      log_path = cfg["log_path"].as_s
-    else
-      log_path = "stdout"
-    end
-
-    # if log_path != "stdout"
-    # Log.setup(:info, Log::IOBackend.new(File.new(log_path, "a+")))
-    # file = File.new(log_path, "a")
-    # writer = IO::MultiWriter.new(file, STDOUT)
-    # log = Logger.new(writer, level: Logger::INFO)
-    # else
-    # qqq  log = Logger.new(STDOUT, level: Logger::DEBUG)
-    # end
-
+    init_log(cfg)
   rescue exception
     abort exception, 1
   end
+
+  Log = ::Log.for("Poni")
 
   channel = Channel(String).new
 
   # # package default values, if not present in config.yaml
   DEFAULTS = {
-    "port":             22,
-    "recurse":          false,
-    "rsync_opts":       "azP",
-    "interval":         10,
-    "delete_on_remote": false,
-    "simulate":         false,
+    "port":       22,
+    "recurse":    false,
+    "rsync_opts": "azP",
+    "interval":   10,
+    "simulate":   true,
   }
 
   def get_val(lookup, sync, data, cfg)
@@ -100,7 +88,7 @@ module Poni
   begin
     # create a Hash map of all source_paths > goes to Watcher to create unique watch for each src path
     map = Hash(String, Array(Hash(String, String))).new
-    sync_now = Hash(String, Bool).new # src_path[remote_path] = false
+    sync_now = Hash(String, Bool).new # src_path[true/false]
 
     # get sync values, if no value then use default fallback
     cfg["sync"].as_h.each do |sync, data|
@@ -113,22 +101,20 @@ module Poni
       recurse = (get_val "recurse", sync, data, cfg).to_s
       rsync_opts = (get_val "rsync_opts", sync, data, cfg).to_s
       interval = (get_val "interval", sync, data, cfg).to_s
-      delete_on_remote = (get_val "delete_on_remote", sync, data, cfg).to_s
       simulate = (get_val "simulate", sync, data, cfg).to_s
 
       # for every source_path, create array of remote_paths and related data
       arr = [] of Hash(String, String)
       data = {
-        "remote_host"      => remote_host,
-        "remote_path"      => remote_path,
-        "remote_user"      => remote_user,
-        "priv_key"         => priv_key,
-        "port"             => port,
-        "recurse"          => recurse,
-        "rsync_opts"       => rsync_opts,
-        "interval"         => interval,
-        "delete_on_remote" => delete_on_remote,
-        "simulate"         => simulate,
+        "remote_host" => remote_host,
+        "remote_path" => remote_path,
+        "remote_user" => remote_user,
+        "priv_key"    => priv_key,
+        "port"        => port,
+        "recurse"     => recurse,
+        "rsync_opts"  => rsync_opts,
+        "interval"    => interval,
+        "simulate"    => simulate,
       }
 
       arr << data
@@ -145,7 +131,6 @@ module Poni
     map.each do |src_path, sync_data|
       Watcher.spawn_watcher(src_path, sync_data, channel)
       sync_now[src_path] = false
-      Log.info { sync_now }
       Scheduler.start_sched(src_path, sync_data, sync_now)
     end
 
@@ -160,13 +145,8 @@ module Poni
       exit
     else
       channel_data = channel.receive
-      # Log.debug { cdata }
-      path = channel_data.split(",")[1]
-      Log.warn { path }
+      path = channel_data.split(",")[1].strip
       sync_now[path] = true
-      Log.info { sync_now }
-      # Log.info { sync_now }
-      # Scheduler.start_sched(cdata)
     end
   end
 end # # module

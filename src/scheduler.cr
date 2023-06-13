@@ -12,24 +12,18 @@ module Poni::Scheduler
 
   def start_sched(src_path, sync_data, sync_now)
     interval = DEFAULTS["interval"] # default
-    Log.warn { src_path }
-    Log.warn { sync_data }
-    Log.warn { sync_now }
 
     # get overal interval for single src_path spanning multiple remote paths
     interval = sync_data[0]["interval"].to_i
-    # sync_data.each do |d|
-    #   interval = d["interval"].to_i
-    #   simulate = d["simulate"].to_s
-    #   delete_on_remote = d["delete_on_remote"].to_s
-    # end
 
     Schedule.every(interval.seconds) do
-      Log.warn { "FROM SCHD" }
-      Log.warn { sync_now[src_path] }
       if sync_now[src_path] == true
         sync_data.each do |d|
-          Log.info { "syncing #{src_path} >> #{d["remote_host"]}:#{d["remote_path"]} now." }
+          if d["simulate"] == "true"
+            Log.info { "[SIMULATING] syncing #{src_path} >> #{d["remote_host"]}:#{d["remote_path"]} now." }
+          else
+            Log.info { "syncing #{src_path} >> #{d["remote_host"]}:#{d["remote_path"]} now." }
+          end
 
           # # SYNC
           stdout = IO::Memory.new
@@ -43,11 +37,14 @@ module Poni::Scheduler
               command = "rsync -e 'ssh -p#{d["port"]} -i #{d["priv_key"]}' -#{d["rsync_opts"]} #{src_path} #{d["remote_user"]}@#{d["remote_host"]}:/#{d["remote_path"]}"
             end
 
-            exit_code = Process.run(command, shell: true, output: stdout, error: stderr).exit_code
+            # only rsync if not simulating
+            if d["simulate"] == "false"
+              exit_code = Process.run(command, shell: true, output: stdout, error: stderr).exit_code
+              if exit_code != 0
+                Log.error { "error syncing #{src_path} to #{d["remote_host"]}:#{d["remote_path"]}: #{stderr}" }
+              end
+            end # simulate
 
-            if exit_code != 0
-              Log.error { "error syncing #{src_path} to #{d["remote_host"]}:#{d["remote_path"]}: #{stderr}" }
-            end
           rescue exception
             Log.error { exception }
           end # begin

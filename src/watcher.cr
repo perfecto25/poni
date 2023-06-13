@@ -18,16 +18,11 @@ module Poni::Watcher
       end
     end
 
-    # # rsync flag, if true will fire off an rsync
-    #sync_now = false
-
     spawn do
       begin
         Inotify.watch src_path, recurse_bool do |event|
-          Log.info { "#{event.name} .... #{event.type} " }
           if event.type.to_s == "MODIFY" || event.type.to_s == "CREATE"
             Log.info { "#{event.name} (#{event.type}): source path: #{src_path}" }
-            #sync_now = true
             channel.send("#{event.type}, #{src_path}")
           end
 

@@ -18,6 +18,12 @@ Poni uses rsync to do the actual file transfer when it detects a change for a wa
 
 Download or compile Poni as a binary, place into /usr/local/bin
 
+### to run from command line:
+
+    ./poni -c config.yaml
+
+### to run as system service:
+
 Create a systemd service file for Poni,
 
 vi /etc/systemd/system/poni.service
@@ -98,6 +104,14 @@ if a Default value is not provided for port, interval, rsync_opts, and recurse, 
 - interval = 10 (seconds)
 - rsync_opts = "azP"
 - recurse = false
+- simulate = true
+
+
+To use a custom Log file instead of standard output, add a "log_path" section in the config file,
+
+    ---
+    log_path: /path/to/your/logfile
+  
 
 ---
 

@@ -5,3 +5,4 @@
 *.dwarf
 config2*
 shard.lock
+bin

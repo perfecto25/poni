@@ -1,4 +1,7 @@
 ---
+
+log_path: /var/log/poni  # optional log path for Poni service, comment out this line to default to stdout
+
 ### optional Global sync settings
 defaults:
   source_path: /opt/dir1
@@ -7,11 +10,10 @@ defaults:
   remote_user: bob
   priv_key: /home/bob/.ssh/id_rsa
   rsync_opts: azP
-  interval: 3
-  recurse: false            # watch source/local directory recursively for changes
-  port: 22                  # default SSH port on the remote end
-  delete_on_remote: false   # if a source file or dir is deleted, delete same file or dir on the remote end
-  simulate: true            # only log potential rsync actions, dont actually do them
+  interval: 3    
+  recurse: false 
+  port: 22       
+  simulate: true 
 
 ## Remote syncs (can specify sync settings for each file or folder)
 sync:
@@ -25,6 +27,7 @@ sync:
     rsync_opts: azBP
     interval: 15
     recurse: true
+    simulate: false
 
   ################################################################################
   ## this sync will use Default values from "defaults" section above
@@ -77,5 +80,4 @@ sync:
     remote_user: root
     priv_key: /root/id_rsa
     recurse: true
-    delete_on_remote: true
     simulate: true
