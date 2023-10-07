@@ -1,5 +1,5 @@
 name: poni
-version: 0.1.3
+version: 0.1.4
 
 authors:
   - perfecto25
@@ -13,6 +13,8 @@ dependencies:
     github: petoem/inotify.cr
   schedule:
     github: hugoabonizio/schedule.cr
+  logger:
+    github: crystal-lang/logger.cr
 
 crystal: 1.2.1
 

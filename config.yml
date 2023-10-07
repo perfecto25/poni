@@ -1,6 +1,7 @@
 ---
-
-log_path: /var/log/poni  # optional log path for Poni service, comment out this line to default to stdout
+log:
+  destination: stdout # stdout or /path/to/log, ie /var/log/poni.log
+  level: error # info, error, warning, debug (for development)
 
 ### optional Global sync settings
 defaults:
@@ -10,10 +11,10 @@ defaults:
   remote_user: bob
   priv_key: /home/bob/.ssh/id_rsa
   rsync_opts: azP
-  interval: 3    
-  recurse: false 
-  port: 22       
-  simulate: true 
+  interval: 3
+  recurse: false
+  port: 22
+  simulate: true
 
 ## Remote syncs (can specify sync settings for each file or folder)
 sync:

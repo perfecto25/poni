@@ -1,6 +1,4 @@
-require "log"
 require "schedule"
-require "./poni"
 
 # Scheduler starts running on startup, creates Scheduler runners that start rsync to remote whenever sync_now flag changes to True
 # Signal to rsync comes from Poni main module, via Channel
@@ -8,9 +6,8 @@ require "./poni"
 
 module Poni::Scheduler
   extend self
-  Log = ::Log.for("Poni::Sched")
 
-  def start_sched(src_path, sync_data, sync_now)
+  def start_sched(src_path, sync_data, sync_now, log)
     interval = DEFAULTS["interval"] # default
 
     # get overal interval for single src_path spanning multiple remote paths
@@ -20,9 +17,9 @@ module Poni::Scheduler
       if sync_now[src_path] == true
         sync_data.each do |d|
           if d["simulate"] == "true"
-            Log.info { "[SIMULATING] syncing #{src_path} >> #{d["remote_host"]}:#{d["remote_path"]} now." }
+            log.info("[SIMULATING] syncing #{src_path} >> #{d["remote_host"]}:#{d["remote_path"]} now.")
           else
-            Log.info { "syncing #{src_path} >> #{d["remote_host"]}:#{d["remote_path"]} now." }
+            log.info("syncing #{src_path} >> #{d["remote_host"]}:#{d["remote_path"]} now.")
           end
 
           # # SYNC
@@ -41,12 +38,13 @@ module Poni::Scheduler
             if d["simulate"] == "false"
               exit_code = Process.run(command, shell: true, output: stdout, error: stderr).exit_code
               if exit_code != 0
-                Log.error { "error syncing #{src_path} to #{d["remote_host"]}:#{d["remote_path"]}: #{stderr}" }
+                log.error("error syncing #{src_path} to #{d["remote_host"]}:#{d["remote_path"]}: #{stderr}")
               end
             end # simulate
 
           rescue exception
-            Log.error { exception }
+            puts exception
+            log.error(exception)
           end # begin
 
         end # data.each
