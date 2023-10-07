@@ -1,8 +1,7 @@
 ---
-# optional log path for Poni service,
-# options are "none", "stdout", "/path/to/log.file
-# if "none", poni will not log anywhere
-log_path: /var/log/poni
+log:
+  destination: stdout # stdout or /path/to/log, ie /var/log/poni.log
+  level: error # info, error, warning, debug (for development)
 
 ### optional Global sync settings
 defaults:

@@ -69,7 +69,7 @@ see config.yaml for examples
         rsync_opts: azBP                    ## additional Rsync flags (default: azP)
         interval: 15                        ## sleep time in seconds before rsyncing on a change, default = 10
         recurse: true                       ## watch directories recursively for changes (ie, watch subdirectories), default = false
-        simulate: true                      ## show rsync actions in systemd log but dont do actual rsync or delete actions. default = true
+        simulate: true                      ## show rsync actions in log output, but dont do actual rsync or delete actions. default = true
 
       "sync syslog to web9":
         source_path: /var/log/syslog
@@ -106,12 +106,29 @@ if a Default value is not provided for port, interval, rsync_opts, and recurse, 
 - recurse = false
 - simulate = true
 
+---
+### Logging
 
-To use a custom Log file instead of standard output, add a "log_path" section in the config file,
+Poni can log to either syslog or a custom log file
 
     ---
-    log_path: /path/to/your/logfile
-  
+    log:
+      destination: stdout
+
+or
+
+    log:
+      destination: /path/to/log/file
+
+you can also set logging levels
+
+    log:
+      level: info
+
+- info = will log all messages
+- warning = will log only Warning and Error messages
+- error = will only log Error messages
+- debug = used for development of Poni
 
 ---
 

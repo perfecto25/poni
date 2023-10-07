@@ -3,6 +3,6 @@
 /bin/
 /.shards/
 *.dwarf
-config2*
+config2.yaml
 shard.lock
 bin

@@ -1,5 +1,4 @@
 # pp!
-require "log"
 require "option_parser"
 require "inotify"
 require "./watcher"
@@ -10,21 +9,20 @@ require "yaml"
 
 module Poni
   extend self
-  # Log::Severity = :debug
+  VERSION = "0.1.4"
 
-  VERSION = "0.1.3"
   cfgfile = "/etc/poni/config.yml"
 
   OptionParser.parse do |parser|
     parser.banner = "Poni - inotify rsync daemon"
     parser.on("-c CONFIG", "--config=CONFIG", "path to config file") { |config| cfgfile = config }
     parser.on "-h", "--help", "Show help" do
-      puts parser
-      exit
+      STDOUT.puts parser
+      exit(0)
     end
     parser.on "-v", "--version", "Show version" do
-      puts VERSION
-      exit
+      STDOUT.puts VERSION
+      exit(0)
     end
     parser.invalid_option do |flag|
       STDERR.puts "ERROR: #{flag} is not a valid option."
@@ -33,11 +31,7 @@ module Poni
     end
   end
 
-  begin
-    abort "config file is missing", 1 if !File.file? cfgfile
-  rescue exception
-    puts exception
-  end
+  abort "config file is missing", 1 if !File.file? cfgfile
 
   begin
     cfg = YAML.parse(File.read(cfgfile)).as_h
@@ -45,14 +39,7 @@ module Poni
     abort "unable to read config file", 1
   end
 
-  begin
-    init_log(cfg)
-  rescue exception
-    abort exception, 1
-  end
-
-  Log = ::Log.for("Poni")
-
+  log = init_log(cfg)
   channel = Channel(String).new
 
   # # package default values, if not present in config.yaml
@@ -64,7 +51,7 @@ module Poni
     "simulate":   true,
   }
 
-  def get_val(lookup, sync, data, cfg)
+  def get_val(lookup, sync, data, cfg, log)
     if data.as_h.has_key?(lookup)
       return data[lookup]?
     end
@@ -80,7 +67,7 @@ module Poni
     end
 
     # exit if cant find lookup value
-    Log.error { "unable to find value for sync name: #{sync}, key: #{lookup}" }
+    log.error("unable to find value for sync name: #{sync}, key: #{lookup}")
     abort "unable to find value for sync name: #{sync}, key: #{lookup}", 1
   end
 
@@ -92,16 +79,16 @@ module Poni
 
     # get sync values, if no value then use default fallback
     cfg["sync"].as_h.each do |sync, data|
-      source_path = (get_val "source_path", sync, data, cfg).to_s
-      remote_host = (get_val "remote_host", sync, data, cfg).to_s
-      remote_path = (get_val "remote_path", sync, data, cfg).to_s
-      remote_user = (get_val "remote_user", sync, data, cfg).to_s
-      priv_key = (get_val "priv_key", sync, data, cfg).to_s
-      port = (get_val "port", sync, data, cfg).to_s
-      recurse = (get_val "recurse", sync, data, cfg).to_s
-      rsync_opts = (get_val "rsync_opts", sync, data, cfg).to_s
-      interval = (get_val "interval", sync, data, cfg).to_s
-      simulate = (get_val "simulate", sync, data, cfg).to_s
+      source_path = (get_val "source_path", sync, data, cfg, log).to_s
+      remote_host = (get_val "remote_host", sync, data, cfg, log).to_s
+      remote_path = (get_val "remote_path", sync, data, cfg, log).to_s
+      remote_user = (get_val "remote_user", sync, data, cfg, log).to_s
+      priv_key = (get_val "priv_key", sync, data, cfg, log).to_s
+      port = (get_val "port", sync, data, cfg, log).to_s
+      recurse = (get_val "recurse", sync, data, cfg, log).to_s
+      rsync_opts = (get_val "rsync_opts", sync, data, cfg, log).to_s
+      interval = (get_val "interval", sync, data, cfg, log).to_s
+      simulate = (get_val "simulate", sync, data, cfg, log).to_s
 
       # for every source_path, create array of remote_paths and related data
       arr = [] of Hash(String, String)
@@ -129,14 +116,14 @@ module Poni
     # CREATE WATCHERS and SYNC SCHEDULERS
     # iterate every source_path in Map, and spawn a watcher
     map.each do |src_path, sync_data|
-      Watcher.spawn_watcher(src_path, sync_data, channel)
+      Watcher.spawn_watcher(src_path, sync_data, channel, log)
       sync_now[src_path] = false
-      Scheduler.start_sched(src_path, sync_data, sync_now)
+      Scheduler.start_sched(src_path, sync_data, sync_now, log)
     end
 
     # CREATE SCHEDULERS
   rescue exception
-    Log.fatal { exception }
+    log.error(exception)
     abort "error running sync: #{exception}", 1
   end # begin
 
