@@ -1,37 +1,40 @@
-require "logger"
+require "log"
 
 def init_log(cfg)
   begin
     if cfg.has_key?("log")
       log_path = cfg["log"]["destination"].as_s.downcase
+      level = cfg["log"]["level"].as_s.downcase
 
-      case log_path
-      when "stdout"
-        log = Logger.new(STDOUT)
-      else
+      if log_path != "stdout"
         file = File.new(log_path, "a")
         writer = IO::MultiWriter.new(file, STDOUT)
-        log = Logger.new(writer)
+
+        ::Log.setup do |c|
+          c.bind "*", :warn, Log::IOBackend.new(io: writer)
+        end
       end
 
-      level = cfg["log"]["level"].as_s.downcase
-      case level
-      when "info"
-        log.level = Logger::INFO
-      when "debug"
-        log.level = Logger::DEBUG
-      when "warning"
-        log.level = Logger::WARN
-      when "error"
-        log.level = Logger::ERROR
-      else
-        log.level = Logger::INFO
-      end
+      severity_level = case level
+                     when "info"
+                       Log::Severity::Info
+                     when "debug"
+                       Log::Severity::Debug
+                     when "warning"
+                       Log::Severity::Warn
+                     when "error"
+                       Log::Severity::Error
+                     else
+                       Log::Severity::Info
+                     end
+
     else
       abort "No log destination or log level defined in config file"
     end
-    log.progname = "Poni"
-    return log
+
+    log = ::Log.for("Poni")
+    log.level = severity_level
+    log
   rescue exception
     abort exception, 1
   end

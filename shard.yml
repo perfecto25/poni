@@ -13,8 +13,6 @@ dependencies:
     github: petoem/inotify.cr
   schedule:
     github: hugoabonizio/schedule.cr
-  logger:
-    github: crystal-lang/logger.cr
 
 crystal: 1.2.1
 

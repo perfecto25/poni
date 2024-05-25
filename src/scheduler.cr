@@ -17,9 +17,9 @@ module Poni::Scheduler
       if sync_now[src_path] == true
         sync_data.each do |d|
           if d["simulate"] == "true"
-            log.info("[SIMULATING] syncing #{src_path} >> #{d["remote_host"]}:#{d["remote_path"]} now.")
+            log.info { "[SIMULATING] syncing #{src_path} >> #{d["remote_host"]}:#{d["remote_path"]} now." }
           else
-            log.info("syncing #{src_path} >> #{d["remote_host"]}:#{d["remote_path"]} now.")
+            log.info { "syncing #{src_path} >> #{d["remote_host"]}:#{d["remote_path"]} now." }
           end
 
           # # SYNC
@@ -38,13 +38,13 @@ module Poni::Scheduler
             if d["simulate"] == "false"
               exit_code = Process.run(command, shell: true, output: stdout, error: stderr).exit_code
               if exit_code != 0
-                log.error("error syncing #{src_path} to #{d["remote_host"]}:#{d["remote_path"]}: #{stderr}")
+                log.error { "error syncing #{src_path} to #{d["remote_host"]}:#{d["remote_path"]}: #{stderr}" }
               end
             end # simulate
 
           rescue exception
             puts exception
-            log.error(exception)
+            log.error { exception }
           end # begin
 
         end # data.each
