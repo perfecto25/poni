@@ -28,7 +28,7 @@ module Poni::Scheduler
 
           begin
             if d["remote_host"] == "localhost" || d["remote_host"] == "127.0.0.1"
-              command = "rsync -#{d["rsync_opts"]} #{d["src_path"]} #{d["remote_path"]}/"
+              command = "rsync -#{d["rsync_opts"]} #{src_path} #{d["remote_path"]}/"
             else
               # puts "rsync -e 'ssh -p#{d["port"]} -i #{d["priv_key"]}' -#{d["rsync_opts"]} #{src_path} #{d["remote_user"]}@#{d["remote_host"]}:/#{d["remote_path"]}"
               command = "rsync -e 'ssh -p#{d["port"]} -i #{d["priv_key"]}' -#{d["rsync_opts"]} #{src_path} #{d["remote_user"]}@#{d["remote_host"]}:/#{d["remote_path"]}"
