@@ -67,7 +67,7 @@ module Poni
     end
 
     # exit if cant find lookup value
-    log.error("unable to find value for sync name: #{sync}, key: #{lookup}")
+    log.error { "unable to find value for sync name: #{sync}, key: #{lookup}" }
     abort "unable to find value for sync name: #{sync}, key: #{lookup}", 1
   end
 
@@ -123,7 +123,7 @@ module Poni
 
     # CREATE SCHEDULERS
   rescue exception
-    log.error(exception)
+    log.error { exception }
     abort "error running sync: #{exception}", 1
   end # begin
 
