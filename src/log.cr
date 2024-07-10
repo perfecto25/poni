@@ -1,37 +1,47 @@
-require "logger"
+require "log"
 
 def init_log(cfg)
   begin
-    if cfg.has_key?("log")
-      log_path = cfg["log"]["destination"].as_s.downcase
+    log_path = cfg.dig?("log", "destination")
+    log_level = cfg.dig?("log", "level")
 
-      case log_path
-      when "stdout"
-        log = Logger.new(STDOUT)
-      else
-        file = File.new(log_path, "a")
-        writer = IO::MultiWriter.new(file, STDOUT)
-        log = Logger.new(writer)
-      end
-
-      level = cfg["log"]["level"].as_s.downcase
-      case level
-      when "info"
-        log.level = Logger::INFO
-      when "debug"
-        log.level = Logger::DEBUG
-      when "warning"
-        log.level = Logger::WARN
-      when "error"
-        log.level = Logger::ERROR
-      else
-        log.level = Logger::INFO
-      end
-    else
-      abort "No log destination or log level defined in config file"
+    if log_path.nil?
+      abort "No log destination defined in config file"
     end
-    log.progname = "Poni"
-    return log
+
+    if log_level.nil?
+      abort "No log level defined in config file"
+    end
+
+    log_path = log_path.as_s.downcase
+    log_level = log_level.as_s.downcase
+
+    if log_path != "stdout"
+      file = File.new(log_path, "a")
+      writer = IO::MultiWriter.new(file, STDOUT)
+
+      ::Log.setup do |c|
+        c.bind "*", :warn, Log::IOBackend.new(io: writer)
+      end
+    end
+
+    severity_level = case log_level
+                   when "info"
+                     Log::Severity::Info
+                   when "debug"
+                     Log::Severity::Debug
+                   when "warning"
+                     Log::Severity::Warn
+                   when "error"
+                     Log::Severity::Error
+                   else
+                     Log::Severity::Info
+                   end
+
+
+    log = ::Log.for("Poni")
+    log.level = severity_level
+    log
   rescue exception
     abort exception, 1
   end
