@@ -34,7 +34,7 @@ module Poni
   abort "config file is missing", 1 if !File.file? cfgfile
 
   begin
-    cfg = YAML.parse(File.read(cfgfile)).as_h
+    cfg = YAML.parse(File.read(cfgfile))
   rescue exception
     abort "unable to read config file", 1
   end
@@ -52,14 +52,12 @@ module Poni
   }
 
   def get_val(lookup, sync, data, cfg, log)
-    if data.as_h.has_key?(lookup)
-      return data[lookup]?
+    if (_data_lookup = data.dig?(lookup))
+      return _data_lookup
     end
 
-    if cfg.has_key?("defaults")
-      if cfg["defaults"].as_h.has_key?(lookup)
-        return cfg["defaults"][lookup]?
-      end
+    if (_defaults_lookup = cfg.dig?("defaults", lookup))
+      return _defaults_lookup
     end
 
     if DEFAULTS.has_key?(lookup)
@@ -67,7 +65,7 @@ module Poni
     end
 
     # exit if cant find lookup value
-    log.error("unable to find value for sync name: #{sync}, key: #{lookup}")
+    log.error { "unable to find value for sync name: #{sync}, key: #{lookup}" }
     abort "unable to find value for sync name: #{sync}, key: #{lookup}", 1
   end
 
@@ -79,16 +77,16 @@ module Poni
 
     # get sync values, if no value then use default fallback
     cfg["sync"].as_h.each do |sync, data|
-      source_path = (get_val "source_path", sync, data, cfg, log).to_s
-      remote_host = (get_val "remote_host", sync, data, cfg, log).to_s
-      remote_path = (get_val "remote_path", sync, data, cfg, log).to_s
-      remote_user = (get_val "remote_user", sync, data, cfg, log).to_s
-      priv_key = (get_val "priv_key", sync, data, cfg, log).to_s
-      port = (get_val "port", sync, data, cfg, log).to_s
-      recurse = (get_val "recurse", sync, data, cfg, log).to_s
-      rsync_opts = (get_val "rsync_opts", sync, data, cfg, log).to_s
-      interval = (get_val "interval", sync, data, cfg, log).to_s
-      simulate = (get_val "simulate", sync, data, cfg, log).to_s
+      source_path = get_val("source_path", sync, data, cfg, log).to_s
+      remote_host = get_val("remote_host", sync, data, cfg, log).to_s
+      remote_path = get_val("remote_path", sync, data, cfg, log).to_s
+      remote_user = get_val("remote_user", sync, data, cfg, log).to_s
+      priv_key = get_val("priv_key", sync, data, cfg, log).to_s
+      port = get_val("port", sync, data, cfg, log).to_s
+      recurse = get_val("recurse", sync, data, cfg, log).to_s
+      rsync_opts = get_val("rsync_opts", sync, data, cfg, log).to_s
+      interval = get_val("interval", sync, data, cfg, log).to_s
+      simulate = get_val("simulate", sync, data, cfg, log).to_s
 
       # for every source_path, create array of remote_paths and related data
       arr = [] of Hash(String, String)
@@ -121,9 +119,9 @@ module Poni
       Scheduler.start_sched(src_path, sync_data, sync_now, log)
     end
 
-    # CREATE SCHEDULERS
+  # CREATE SCHEDULERS
   rescue exception
-    log.error(exception)
+    log.error { exception }
     abort "error running sync: #{exception}", 1
   end # begin
 

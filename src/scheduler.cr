@@ -17,9 +17,9 @@ module Poni::Scheduler
       if sync_now[src_path] == true
         sync_data.each do |d|
           if d["simulate"] == "true"
-            log.info("[SIMULATING] syncing #{src_path} >> #{d["remote_host"]}:#{d["remote_path"]} now.")
+            log.info { "[SIMULATING] syncing #{src_path} >> #{d["remote_host"]}:#{d["remote_path"]} now." }
           else
-            log.info("syncing #{src_path} >> #{d["remote_host"]}:#{d["remote_path"]} now.")
+            log.info { "syncing #{src_path} >> #{d["remote_host"]}:#{d["remote_path"]} now." }
           end
 
           # # SYNC
@@ -28,7 +28,7 @@ module Poni::Scheduler
 
           begin
             if d["remote_host"] == "localhost" || d["remote_host"] == "127.0.0.1"
-              command = "rsync -#{d["rsync_opts"]} #{d["src_path"]} #{d["remote_path"]}/"
+              command = "rsync -#{d["rsync_opts"]} #{src_path} #{d["remote_path"]}/"
             else
               # puts "rsync -e 'ssh -p#{d["port"]} -i #{d["priv_key"]}' -#{d["rsync_opts"]} #{src_path} #{d["remote_user"]}@#{d["remote_host"]}:/#{d["remote_path"]}"
               command = "rsync -e 'ssh -p#{d["port"]} -i #{d["priv_key"]}' -#{d["rsync_opts"]} #{src_path} #{d["remote_user"]}@#{d["remote_host"]}:/#{d["remote_path"]}"
@@ -38,13 +38,13 @@ module Poni::Scheduler
             if d["simulate"] == "false"
               exit_code = Process.run(command, shell: true, output: stdout, error: stderr).exit_code
               if exit_code != 0
-                log.error("error syncing #{src_path} to #{d["remote_host"]}:#{d["remote_path"]}: #{stderr}")
+                log.error { "error syncing #{src_path} to #{d["remote_host"]}:#{d["remote_path"]}: #{stderr}" }
               end
             end # simulate
 
           rescue exception
             puts exception
-            log.error(exception)
+            log.error { exception }
           end # begin
 
         end # data.each
